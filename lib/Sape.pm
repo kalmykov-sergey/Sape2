@@ -33,7 +33,7 @@ our $VERSION = '0.01';
 # Preloaded methods go here.
 use Sape::RPC;
 use Sape::DB;
-use Sape::CheckLinks;
+use Sape::Index;
 use Sape::HTML;
 
 #use DBI;

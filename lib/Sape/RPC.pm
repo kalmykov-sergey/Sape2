@@ -2,6 +2,8 @@ package Sape::RPC;
 use strict;
 use warnings;
 
+use Carp;
+
 use HTTP::Cookies;
 use Encode;
 use Digest::MD5 qw(md5_hex);
@@ -23,7 +25,7 @@ sub call {
     if($resp->is_fault){
       # TODO: надо решить, как лучше: 
       # бросать исключение или обрабатывать код тут же
-      die $resp->string, Dumper $request;
+      croak $resp->string, Dumper $request;
       return $resp->code;
     }
     return $resp;

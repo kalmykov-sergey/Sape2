@@ -163,4 +163,215 @@ sub load {
 } # извлечение данных из базы в память
 
 
+sub get_result {
+    my $file_id = shift;
+
+    my @nonindexed_links = ();
+    my %bad_donors = ();
+    
+    my $dbh = DBI->connect('dbi:mysql:seo:localhost', 'seo', 'seo2009');
+    my $file_info = $dbh->selectrow_hashref("
+        select engine, name from backlinks_files where id = '$file_id'
+    ");
+    my ($engine, $file_name) = ($file_info->{engine}, $file_info->{name});
+    my $q_select = $dbh->prepare("
+        select id, url from backlinks_links where file_id = '$file_id'
+    ");
+    $q_select->execute;
+    while(my $row = $q_select->fetchrow_hashref){
+        my $info = $dbh->selectrow_hashref("
+            select checked, bad_donor
+            from backlinks_check where link_id = ?
+        ", undef, $row->{id});
+        push @nonindexed_links, $row->{url} unless $info->{checked};
+        $bad_donors{$row->{url}} = $info->{bad_donor} 
+            if bad($info->{bad_donor}); 
+    }
+    $q_select->finish;
+    $dbh->disconnect;
+
+    return {
+        links => \@nonindexed_links, 
+        donors => \%bad_donors,
+        name => $file_name,
+        engine => $engine,
+    };
+}
+
+sub file_to_db {
+    my ($links_ref, $file_name, %opts) = @_;
+    my $mime_type = $opts{mime_type} || 'text/plain';
+    my $engine = $opts{engine} || 'qip';
+    my $user = $opts{user} || 'anonymous';
+    my $path = $opts{path};
+    my @links = @$links_ref;
+    s{^http://}{}i foreach @links;
+    my $dbh = DBI->connect('dbi:mysql:seo:localhost', 'seo', 'seo2009');
+    $dbh->do("set names 'cp1251'");
+    $dbh->do('
+        insert into backlinks_files (name, path, user, engine, mime_type) 
+        values (?, ?, ?, ?, ?)
+    ', undef, $file_name, $path, $user, $engine, $mime_type);
+    my $file_id = $dbh->selectrow_hashref('
+        select id from backlinks_files order by id desc limit 1
+    ')->{id};
+    foreach(@links){
+    $dbh->do('
+        insert into backlinks_links (url, file_id, site_id) values (?, ?, ?)
+    ', undef, $_, $file_id, undef);
+    }
+    $dbh->disconnect;
+    return $file_id;
+}
+
+sub check_last_file {
+    my $dbh = DBI->connect('dbi:mysql:seo:localhost','seo','seo2009');
+    my $file_id = $dbh->selectrow_hashref("
+        select id from backlinks_files order by id desc limit 1
+    ")->{id};
+    $dbh->disconnect;
+    check_file($file_id);
+}
+
+sub check_file($) {
+    my $file_id = shift;
+    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009') or die "connection err:$!";
+    
+    my ($engine, $user, $name) = $dbh->selectrow_array("
+        select engine, user, name from backlinks_files where id = ?
+    ", undef, $file_id);
+
+=pod
+    if ($user ne 'anonymous'){
+        my $count = $dbh->selectrow_hashref("
+            select count(id) as num from backlinks_links where file_id = '$file_id'
+        ")->{num};
+        BackLinks::Mail::notify($user, "Проверка $name", 
+            "Проследить за процессом проверки индексации файла $name". 
+            "вы можете по адресу:
+                http://mail.plarson.ru:81/cgi-bin/monitor.cgi?file=$file_id"
+        ) if($count > 30);
+    }
+=cut
+
+    my $q_fetch = $dbh->prepare("
+        select id, url from backlinks_links where file_id = '$file_id'
+    ");
+    my $q_check_inserted = $dbh->prepare("
+        select count(id) as ok from backlinks_check where link_id = ?
+    ");
+    my $q_insert = $dbh->prepare("
+        insert into backlinks_check (link_id, engine, checked, ip, bad_donor)
+        values (?, ?, ?, INET_ATON(?), ?)
+    ");
+    $q_fetch->execute;
+    while(my $row = $q_fetch->fetchrow_hashref){
+        $q_check_inserted->execute($row->{id});
+        next if($q_check_inserted->fetchrow_hashref->{ok});
+        my $checked = LinkIndex::check($row->{url}, $engine);
+        print $row->{url},' is  ',$checked," by $engine\n";
+        my $bad_donor = is_bad_donor($row->{url});
+        print "is $bad_donor\n";
+        $q_insert->execute(
+            $row->{id}, $engine, $checked, $LinkIndex::ip, $bad_donor);
+    }
+    $q_fetch->finish;
+    $q_insert->finish;
+    $q_check_inserted->finish;
+    $dbh->disconnect;
+
+    if ($user ne 'anonymous' and $user ne 'chpi_rf@mail.ru') {
+        my $result = get_result($file_id);
+        my $file_name = $result->{name};
+        my @nonindexed_links = @{$result->{links}};
+        my %bad_donors = %{$result->{donors}};
+        $file_name = $file_name.'.csv';
+        my $str = BackLinks::File::result_to_csv_format(\@nonindexed_links, \%bad_donors);
+
+        BackLinks::Mail::send_results(
+            $user, 
+            "Проверка $name", 
+            "Результаты проверки $name",
+            $file_name,
+            $str,
+        );
+    }
+}
+
+sub delete_file($) {
+    my $file_id = shift;
+    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009');
+    $dbh->do("
+        update backlinks_files set invisible=1 where id='$file_id'
+    ");
+    $dbh->disconnect;
+}
+
+sub clear_db {
+    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009');
+    my $files_ref = $dbh->selectcol_arrayref("
+      select id from backlinks_files where invisible=1
+    ");
+    foreach my $file (@$files_ref){
+      my $links_ref = $dbh->selectcol_arrayref("
+        select id from backlinks_links where file_id = '$file'
+      ");
+      foreach my $linkid (@$links_ref){
+        $dbh->do("
+          delete from backlinks_check where link_id = '$linkid'
+        ");
+      }
+      $dbh->do("delete from backlinks_links where file_id = '$file'");
+      $dbh->do("delete from backlinks_files where id = '$file'");
+    }
+    $dbh->disconnect;
+    
+}
+
+sub recheck_file($) {
+    my $file_id = shift;
+    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009') or die "connection err:$!";
+    $dbh->do("
+        delete from backlinks_check where link_id in 
+            (select id from backlinks_links where file_id='$file_id')
+    ");
+    $dbh->disconnect;
+    check_file($file_id);
+}
+
+sub daemon_check($) {
+    my $file_id = shift;
+    my $pid = fork();
+    #If i am children?
+    if($pid eq '0'){
+        #Close owners handles
+        close(STDIN);
+        close(STDOUT);
+        close(STDERR);
+        #I am not terminal programm. Closing session or die.
+        my $works = "${$}_works.txt";
+        my $stderr = "${$}_err.txt";
+        my $stdout = "${$}_out.txt";
+        open STDERR, ">$stderr";
+        open STDOUT, ">$stdout";
+        open my $w, ">$works";
+        close $w;
+		eval{
+		LinkIndex::reconnect();
+        recheck_file($file_id);
+        };
+        warn $@ if $@;
+        unlink $works;
+    }else{
+        #All ok.
+        if($pid){
+            print STDERR "Daemon started.\n";
+        }else{
+            print STDERR "Error: cannot fork.\n";
+        }
+        exit;
+    };
+}
+
+
 1;

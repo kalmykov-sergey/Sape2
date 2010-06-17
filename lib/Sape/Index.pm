@@ -22,7 +22,8 @@ our @EXPORT = qw(
     qip_check_url
     yandex_check_url
     qip_check
-    yandex_check    
+    yandex_check
+    xml_check
 );
 
 our $VERSION = '0.01';
@@ -111,6 +112,13 @@ sub yandex_check {
     return 0;
 }
 
+
+sub xml_check {
+    my $link = shift;
+    eval{ require Yandex::XML };
+    croak "Yandex lib is not installed: $@" if $@;
+    return Yandex::XML::url_indexed($link);
+}
 
 1;
 

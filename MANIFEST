@@ -3,5 +3,11 @@ Makefile.PL
 MANIFEST
 README
 t/Sape.t
+t/Alexa.t
+t/LiveInternet.t
+t/Index.t
 lib/Sape.pm
-script/sape.cgi
+lib/Sape/Index.pm
+lib/Sape/Index/Alexa.pm
+lib/Sape/Index/LiveInternet.pm
+script/view.cgi

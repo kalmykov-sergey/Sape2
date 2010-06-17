@@ -197,7 +197,7 @@ td({-valign => 'top'},
 ), 
 td({-valign => 'top', width => '220px'}, 
     '<a href="../link_robot_help.html">Помощь</a>', br,
-    h4($diag),
+    #h4($diag),
     # авторизационная форма
     h2('Авторизация'),
     start_multipart_form(-style => 'width:220px;'), 

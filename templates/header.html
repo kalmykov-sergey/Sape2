@@ -1,0 +1,22 @@
+<html>
+<head>
+  <title>
+  [% IF title %]
+    [% title %]
+  [% ELSE %]
+    Страница находится в разработке
+  [% END %]
+  </title>
+
+<style>
+  td {
+    vertical-align: top;
+  }
+</style>
+</head>
+<body>
+<table width="1000px" style="background-color:#DDEEFF" align="center">
+<tr><td>
+  [% IF NOT title %]
+    [% INCLUDE todo.html %]
+  [% END %]

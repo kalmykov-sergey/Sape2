@@ -1,0 +1,25 @@
+<script>
+  function showAuthMsg {
+    var el = getElementById("auth_msg"); 
+    el.innerHTML = "ждите, соединяюсь с Sape.ru";
+    el.style.visibility = "visible";
+    el.style.color = "red";
+  }
+</script>
+
+<form action="[% path %]" method="post">
+   <span id="auth_msg">[% auth.msg %]</span><br/>
+   <input type="text" name="login"
+     [% IF auth.login %] value="[% auth.login %]" [% END %]
+   />
+   &nbsp; логин <br/> 
+   <input type="password" name="password" 
+     [% IF auth.password %] value="[% auth.password %]" [% END %]
+   />
+   &nbsp; пароль <br/> 
+   <input type="submit" name="action" value="Зайти" onClick='javascript: showAuthMsg()'/>
+   &nbsp;&nbsp;&nbsp; 
+   [% style = 'style="visibility:hidden"' %]
+   <input type="submit" name="action" value="Выйти" [% style IF NOT auth.connected %]/>
+   </br> <a href="[% basefilepath %]?mode=register">зарегистрироваться</a>
+</form>

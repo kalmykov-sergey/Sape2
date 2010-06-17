@@ -1,0 +1,38 @@
+<script>
+  function change_display(elem){
+    obj=elem.nextSibling.nextSibling.style; 
+    tmp=(obj.display!='block') ? 'block' : 'none'; 
+    obj.display=tmp; return false;
+  }
+</script>
+
+<h3>Ваши проекты:</h3>
+<ul>
+[% FOREACH project IN projects %]
+  <li><!--[% project.id %]-->
+  <a href="#" title="раскрыть список ссылок" style="text-decoration:none"
+    onclick="javascript: change_display(this);"
+  >+</a>
+  [% project.name %] 
+  <div class="subblock" style="display: none"> 
+  <a href="[% path %]?q=noindex">Непроиндексированные ссылки</a>
+  <ol>
+  [% FOREACH link IN project.links %]
+    <li>
+      <!-- id = [% link.id %];--> 
+      <a href="http://yandex.ru/yandsearch?text=[% link.site_url %][% link.page_uri %]&lr=1">
+      [% link.site_url %][% link.page_uri %]
+      </a>
+      [% IF link.is_indexed %] 
+        <span style="color:green">проиндексирована</span> 
+      [% ELSE %] 
+        <span style="color:red">не проиндексирована</span> 
+      [% END %]
+    </li>
+  [% END %]
+  </ol>
+  </div>
+  </li>
+[% END %]
+</ul>
+

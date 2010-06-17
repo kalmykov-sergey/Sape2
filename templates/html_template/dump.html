@@ -1,0 +1,31 @@
+<script>
+  function change_display(elem){
+    obj=elem.nextSibling.nextSibling.style; 
+    tmp=(obj.display!='block') ? 'block' : 'none'; 
+    obj.display=tmp; return false;
+  }
+</script>
+
+<ul>
+<TMPL_LOOP NAME=projects >
+  <li>
+    <!-- 
+      ID: <TMPL_VAR NAME=id> 
+      USER: <TMPL_VAR NAME=user_id> 
+    --> 
+    <a href="#" title="раскрыть список ссылок" style="text-decoration:none"
+      onclick="javascript: change_display(this);"
+    >+</a>
+    <TMPL_VAR NAME=name> 
+    <div class="subblock" style="display: none"> 
+    <ol>
+    <TMPL_LOOP NAME=links>
+      <li> <TMPL_VAR NAME=site_url><TMPL_VAR NAME=page_uri>
+      <!--<TMPL_VAR NAME=id>--> <TMPL_VAR NAME=is_indexed> </li>
+    </TMPL_LOOP>
+    </ol>
+    </div>
+  </li>
+</TMPL_LOOP>
+</ul>
+

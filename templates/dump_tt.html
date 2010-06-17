@@ -1,0 +1,35 @@
+<script>
+  function change_display(elem){
+    obj=elem.nextSibling.nextSibling.style; 
+    tmp=(obj.display!='block') ? 'block' : 'none'; 
+    obj.display=tmp; return false;
+  }
+</script>
+
+<ul>
+[% FOREACH project = projects %]
+  <li><!--[% project.id %]-->
+  <a href="#" title="раскрыть список ссылок" style="text-decoration:none"
+    onclick="javascript: change_display(this);"
+  >+</a>
+  [% project.name %] 
+  <div class="subblock" style="display: none"> 
+  <ol>
+  [% FOREACH link = project.links %]
+    <li> 
+      <!-- id = [% link.id %];--> 
+      [% link.site_url %][% link.page_uri %]
+      [% IF link.is_indexed %] 
+        <span style="text-color:green">проиндексирована</span> 
+      [% ELSE %] 
+        <span style="text-color:red">не проиндексирована</span> 
+      [% END %]
+    </li>
+  [% END %]
+  </ol>
+  </div>
+
+  </li>
+[% END %]
+</ul>
+

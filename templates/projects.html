@@ -1,0 +1,64 @@
+<div>
+[% IF authorized %]
+  <script>
+    function change_display(elem){
+      obj=elem.nextSibling.nextSibling.style; 
+      tmp=(obj.display!='block') ? 'block' : 'none'; 
+      obj.display=tmp; return false;
+    }
+
+    /*
+    function check_link(url){
+      var str = url.replace("http:\/\/", "");
+      str = str.replace("www\.", "");
+      var new_url = "http://yandex.ru/yandsearch?text=url:"
+        + str + " || url:www." + str + "&lr=1";
+      alert(new_url);
+      window.open(new_url);
+      return false;
+    }
+    */
+  </script>
+
+  <h3><a href="[% basefilepath %]" style="text-decoration:none">Ваши проекты:</a></h3>
+  [% FOREACH project IN projects %]
+    <!--[% project.id %]-->
+    <a href="#" title="раскрыть список ссылок" style="text-decoration:none"
+      onclick="javascript: change_display(this);"
+    >+</a>
+    [% project.name %] 
+    <div class="subblock" style="display: none"> 
+    <a href="[% path %]?project=[% project.name %]">
+      Все ссылки проекта
+    </a>
+    &nbsp;&nbsp;
+    <a href="[% basefilepath %]?project=[% project.name %]&filter=noindex">
+      Только непроиндексированные
+    </a>
+    &nbsp;&nbsp;
+    <a href="[% basefilepath %]?project=[% project.name %]&filter=noindex&mode=modify">
+      Редактировать
+    </a>
+    <ol>
+    [% FOREACH link IN project.links %]
+      <li>
+        [% IF link.is_indexed %]
+          <span style="background-color:lightgreen">
+        [% ELSIF link.is_indexed==0 %] 
+          <span style="background-color:pink">
+        [% END %]
+        <!-- id = [% link.id %];--> 
+        <a href="[% link.check_link %]">
+        [% link.site_url %][% link.page_uri %]
+        </a>
+        </span> 
+      </li>
+    [% END %]
+    </ol>
+    </div>
+    <br/>
+  [% END %]
+[% ELSE %]
+  <h4>Авторизуйся, %username% !!!<h4>
+[% END %]
+</div>

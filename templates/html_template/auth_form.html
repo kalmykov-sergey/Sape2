@@ -1,0 +1,18 @@
+<form action="#" method="POST">
+   <span id="auth_msg"><TMPL_VAR NAME=auth_msg></span><br/>
+   <input type="text" name="user"
+     <TMPL_IF NAME=defined_login>value="<TMPL_VAR NAME=login>"</TMPL_IF>
+   />&nbsp; логин <br/> 
+   <input type="password" name="password"
+     <TMPL_IF NAME=defined_password>value="<TMPL_VAR NAME=password>"</TMPL_IF>
+   />&nbsp; пароль <br/> 
+   <input type="submit" value="Зайти" onClick='javascript: 
+      var el = getElementById("auth_msg"); 
+      el.innerHTML = "ждите, соединяюсь с Sape.ru";
+      el.style.visibility = "visible";
+      el.style.color = "red";
+   '/>&nbsp;&nbsp;&nbsp; 
+   <input type="submit" value="Выйти" 
+     <TMPL_IF NAME=connected> style="visibility:hidden" </TMPL_IF>
+   />
+</form>

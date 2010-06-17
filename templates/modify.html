@@ -1,0 +1,81 @@
+[% PROCESS header.html %]
+
+<script>
+  var selected = false;
+
+  function change_display(elem){
+    obj=elem.nextSibling.nextSibling.style; 
+    tmp=(obj.display!='block') ? 'block' : 'none'; 
+    obj.display=tmp; return false;
+  }
+
+  function selectAll(){
+    var elems = document.getElementsByTagName('input');
+    for(var i=0;i<elems.length;i++){
+      elems[i].checked = selected?true:false;
+    }
+    selected = ! selected;
+    return false;
+  }
+
+  function submitChecked(elem) {
+    var e = elem.parentNode.parentNode.parentNode.parentNode.parentNode;
+    e.submit();
+    return false;
+  }
+</script>
+
+<h3>Редактирование <a href="[% basefilepath %]">проектов</a></h3>
+[% FOREACH project IN projects %]
+  <!--[% project.id %]-->
+  <a href="#" title="раскрыть список ссылок" style="text-decoration:none"
+    onclick="javascript: change_display(this);"
+  >+</a>
+  [% project.name %] 
+  <div class="subblock" style="display: none"> 
+  <form action="[% basefilepath %]" method="post">
+  <input type="hidden" name="mode" value="delete"/>
+  <input type="hidden" name="login" value="[% auth.login %]"/>
+  <input type="hidden" name="password" value="[% auth.password %]"/>
+  <table>
+    <tr>
+      <th>Ссылки</th>
+      <th>Помеченные к удалению</th>
+    </tr>
+    <tr>
+      <td><a href="#">отсортировать</a></td>
+      <td><a href="#" onclick="javascript: selectAll();">отметить все /<br/> снять выделение</a></td>
+    </tr>
+  [% FOREACH link IN project.links %]
+    <tr>
+      <td>
+        <span
+        [% IF link.is_indexed %]
+          style="background-color:lightgreen"
+        [% ELSE %] 
+          style="background-color:pink"
+        [% END %]
+        >
+        <!-- id = [% link.id %];--> 
+        <a href="[% link.check_link %]">
+          [% link.site_url %][% link.page_uri %]
+        </a>
+        </span>
+      </td>
+      <td><input type="checkbox" name="to_delete" value="[% link.id %]"
+        [% IF NOT link.action==delete %] checked [% END %]
+       /></td>
+    </tr>
+  [% END %]
+    <tr>
+      <td>
+      <!--<a href="#" onClick="javascript: submitChecked(this);">удалить отмеченные</a>-->
+      <input type="submit" name="action" value="Изменить"/>
+      </td>
+    </tr>
+  </table>
+  </form>
+  </div>
+  <br/>
+[% END %]
+[% PROCESS footer.html %]

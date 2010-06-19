@@ -71,14 +71,23 @@ sub qip_check {
                          );
         my $resp = $UA->get($uri->as_string);
         croak($resp->status_line) unless $resp->is_success;
-        my $html = lc $resp->content;
-        my $match = lc uri_unescape(encode_entities($link));
+        my $html = $resp->content;
+        my $match = uri_unescape(encode_entities($link));
         $match =~ s{\s+$}{}g;
+        my $href = $1 if ($html =~ /<div class="title"><i[^>]*><\/i><a href="([^"]*)"/);
         return 1 if (
                      index($html,'<ol class="searchresult"') > -1
                      and
+                     (
                      index($html, '<p class="info">'.$match) > -1
+                     or
+                     $html =~ /<a href="${match}"/is
+                     or 
+                     lc $href eq lc $link
+                     or
+                     $html =~ /<a href="${link}\/?"/is
                      )
+                     );
     }
     return 0;
 }

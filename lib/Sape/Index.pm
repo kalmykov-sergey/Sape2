@@ -65,6 +65,7 @@ sub qip_check {
 
     my $uri = URI->new("http://search.qip.ru/search");
     my @links = ("http://$link", "http://www.$link");
+    my $href = undef;
     foreach my $link (@links){
         $uri->query_form(
                          query => $link
@@ -74,7 +75,10 @@ sub qip_check {
         my $html = $resp->content;
         my $match = uri_unescape(encode_entities($link));
         $match =~ s{\s+$}{}g;
-        my $href = $1 if ($html =~ /<div class="title"><i[^>]*><\/i><a href="([^"]*)"/);
+        # funny case, if response to mysite.ru contains www.mysite.ru
+        # and in opposite response to www.mysite.ru contains only mysite.ru
+        return 1 if (lc $link eq lc $href); 
+        $href = $1 if ($html =~ /<div class="title"><i[^>]*><\/i><a href="([^"]*)"/);
         return 1 if (
                      index($html,'<ol class="searchresult"') > -1
                      and

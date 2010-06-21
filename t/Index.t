@@ -10,7 +10,6 @@ is( qip_check('http://freedomink.org/index.php?newsid=68'), 0, 'many results, bu
 is( qip_check('http://nuclearno.ru/text.asp?6352'), 1, 'lc url');
 is( qip_check('http://cupofnews.ru/devices/Anonsirovan_telefon_Nokia_5800_Navigation_Edition/'), 1, 'uc, long and end-slash');
 
-
 is( yandex_check('http://www.portforum.ru/www-catalog/id/38'), 0, 'yandex 1');
 is( yandex_check('portfoasdfasdfasm.ru/www-catalog/id/38.html'), 0, 'yandex doesn\'t know non-existing sites');
 ok( is_bad_donor('130cmyk.ru'), 'bad donor');

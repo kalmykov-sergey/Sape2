@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="ee1d21b2-3f12-462f-aab0-215e25a2a11a" kpf_version="4" name="Sape2.kpf">
+<preference-set idref="ee1d21b2-3f12-462f-aab0-215e25a2a11a">
+  <boolean id="import_live">1</boolean>
+<preference-set id="testPlans">
+<preference-set id="Sape2 - test plan # 1">
+  <string id="command_line">make test TEST_FILES=t/Index.t</string>
+  <string relative="url" id="directory"></string>
+  <string id="language">Perl - TAP (*.t)</string>
+</preference-set>
+</preference-set>
+</preference-set>
+</project>

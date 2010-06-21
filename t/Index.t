@@ -17,8 +17,9 @@ ok( is_bad_donor('130cmyk.ru'), 'bad donor');
 #is( is_bad_donor('plarson.ru'), undef, 'plarson must be a good donor');
 
 SKIP: {
-    eval{ require Yandex::XML};
-    skip "Yandex::XML not installed", 2 if $@;
+    eval{
+        require Yandex::XML
+    } or skip( "Yandex::XML not installed", 2);
     is( xml_check('print-magazin.ru'), 1, 'xml 1'); 
     is( xml_check('portfoasdfasdfasm.ru/www-catalog/id/38.html'), 0, 'xml 2');
 }

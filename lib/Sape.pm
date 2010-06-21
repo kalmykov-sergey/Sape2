@@ -4,10 +4,12 @@ use 5.010000;
 use strict;
 use warnings;
 
+use Carp;
+
 require Exporter;
 use AutoLoader qw(AUTOLOAD);
 
-our @ISA = qw(Exporter);
+use base 'Exporter';
 
 # Items to export into callers namespace by default. Note: do not export
 # names by default without a very good reason. Use EXPORT_OK instead.
@@ -16,18 +18,11 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Sape ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw( cron ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw(
-    cron_check
-    cron_sync	
-);
-
-our $VERSION = '0.01';
+our $VERSION = sprintf("1.%06d", q$Revision: 9874 $ =~ /(\d+)/o);
 
 
 # Preloaded methods go here.
@@ -41,9 +36,8 @@ use Data::Dumper;
 
 my $debug = 0;
 
-=pod
-  Основные функции верхнего уровня (надо бы экспортировать их)
-=cut
+
+#  Основные функции верхнего уровня (надо бы экспортировать их)
 
 
 # список всех зарегистрированных паролей
@@ -68,6 +62,7 @@ sub cron_check {
     $user->check_links();
     $user->save_to_db();
   }
+  return;
 } # проверка ссылок, запускается каждые n часов 
   # (n зависит от числа ссылок по всем логинам)
 
@@ -82,13 +77,14 @@ sub cron_sync {
       $remote_user = Sape::RPC->login($_, $pwds{$_});
       $remote_user->send_actions($actions_todo);
     };
-    die $@ if $@;
+    croak $@ if $@;
 
     print "refreshing ...\n" if $debug;
     $remote_user->refresh();
     $local_user->update_with($remote_user);
     $local_user->save_to_db();
   }
+  return;
 } # синхронизация с Sape.ru, запускается каждый час
 
 
@@ -97,12 +93,12 @@ sub register_new_user {
   eval{
     my $user = Sape->new($login, $password);
   };
-  unless($@){
-    die "such user is already registered";
-  }
+  croak 'such user is already registered' if $@;
+
   my $user = Sape->new('kalmykov', 'kalmykov1A');
   # TODO: пока чтобы сделать нового пользователя нужен старый (админский?)
   $user->{db}->create_user($login, $password);
+  return;
 }
 
 
@@ -113,10 +109,8 @@ sub new_html {
 }
 
 
-=pod
-    Объект Sape содержит в себе структуры {projects} и {db}
-=cut
 
+# Объект Sape содержит в себе структуры {projects} и {db}
 
 sub new {
   my $class = shift;
@@ -127,7 +121,7 @@ sub new {
   eval{
     $self->{db} = Sape::DB->connect($login, $password);
   };
-  die "Неверный логин или пароль: $@" if $@;
+  croak "Неверный логин или пароль: $@" if $@;
   
   $self->load_from_db; 
 
@@ -140,7 +134,7 @@ sub delete {
   eval{ 
     $self->{db}->disconnect(); 
   };
-  die "DataBase error: $@" if $@;
+  croak "DataBase error: $@" if $@;
 } # деструктор
 
 
@@ -172,6 +166,7 @@ sub save_to_db {
     $self->{db}->save( $self->{projects} );
   };
   die "DataBase error: $@" if $@;
+  return;
 } # сохранение данных по логину в локальной базе  
   # процедура опасная, поскольку сначала удаляются все данные
   # по пользователю, а затем записываются сохраненные из памяти
@@ -240,14 +235,14 @@ sub check_links {
     foreach my $link (@{$pr->{links}}){
       my $uri = $link->{'site_url'} . $link->{'page_uri'};
       if(defined $link->{'is_indexed'}) {
-        print "skipping $uri (", 
+        print "skipping $uri (",
           ($link->{'is_indexed'})?'OK':'FAIL', ")\n" if $debug;
         next;
       }
       eval{
       $link->{'is_indexed'} = Sape::CheckLinks::check_qip($uri);
       };
-      warn @$,"\n" if @$;
+      carp $@,"\n" if $@;
       print "$uri ... ", ($link->{'is_indexed'})?'OK':'FAIL', "\n" if $debug;
     }
   }
@@ -290,6 +285,10 @@ __END__
 
 Sape - Perl extension for blah blah blah
 
+=head1 VERSION
+
+Version 0.01
+
 =head1 SYNOPSIS
 
   use Sape;
@@ -307,7 +306,21 @@ Blah blah blah.
 
 None by default.
 
+=head1 SUBROUTINES/METHODS
 
+=head2 function1
+
+=cut
+
+sub function1 {
+}
+
+=head2 function2
+
+=cut
+
+sub function2 {
+}
 
 =head1 SEE ALSO
 
@@ -324,7 +337,13 @@ If you have a web site set up for your module, mention it here.
 
 sergey, E<lt>sergey@suse.deE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 BUGS AND LIMITATIONS
+
+Please report any bugs or feature requests to C<bug-sape at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Sape>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+=head1 LICENSE AND COPYRIGHT 
 
 Copyright (C) 2010 by sergey
 

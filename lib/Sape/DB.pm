@@ -330,7 +330,7 @@ sub clear_db {
 
 sub recheck_file($) {
     my $file_id = shift;
-    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009') or die "connection err:$!";
+    my $dbh = DBI->connect('dbi:mysql:seo;host=mail.plarson.ru','seo','seo2009') or croak("connection err:$!");
     $dbh->do("
         delete from backlinks_check where link_id in 
             (select id from backlinks_links where file_id='$file_id')
@@ -339,7 +339,7 @@ sub recheck_file($) {
     check_file($file_id);
 }
 
-sub daemon_check($) {
+sub daemon_check {
     my $file_id = shift;
     my $pid = fork();
     #If i am children?
@@ -352,15 +352,17 @@ sub daemon_check($) {
         my $works = "${$}_works.txt";
         my $stderr = "${$}_err.txt";
         my $stdout = "${$}_out.txt";
-        open STDERR, ">$stderr";
-        open STDOUT, ">$stdout";
-        open my $w, ">$works";
+        croak("cannot redirect STD streams: $!") if (
+                                                    not open STDERR, '>', $stderr
+                                                    or 
+                                                    not open STDOUT, '>', $stdout
+                                                    );
+        open my $w, '>', $works or croak("$!");
         close $w;
-		eval{
-		LinkIndex::reconnect();
-        recheck_file($file_id);
-        };
-        warn $@ if $@;
+	eval{
+          LinkIndex::reconnect();
+          recheck_file($file_id);
+        } or carp $@;
         unlink $works;
     }else{
         #All ok.

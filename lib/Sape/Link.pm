@@ -22,8 +22,11 @@ sub new {
         my $url = $url_or_hashref;
         $url = 'http://'.$url if($url !~ /^http:/x);
         my $uri = URI->new($url);
-        my $page = substr($uri->as_string, length($uri->host));
-        $self = {URI => $uri, 'site_url' => $uri->host, 'page_uri' => $page};        
+        my $host = $uri->host();
+        my $page = $uri->path();
+        $page .= $uri->query() if $uri->query();
+        $page .= $uri->fragment() if $uri->fragment();
+        $self = {URI => $uri, 'site_url' => $host, 'page_uri' => $page};        
     }
     bless $self, $class;
     return $self;

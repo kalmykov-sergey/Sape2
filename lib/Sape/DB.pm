@@ -6,6 +6,8 @@ use warnings;
 use DBI;
 use Carp;
 
+use Sape::Link;
+
 #use Data::Dumper;
 
 sub _new {
@@ -54,7 +56,7 @@ sub _create_link {
      $link->site_url,
      $link->page_uri
      );
-  return $self->{db}->mysql_inserid;
+  return $self->{db}->last_insert_id('', '', '', '');
 } # insert link into db, returns last_insert_id
 
 1;

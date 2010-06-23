@@ -3,56 +3,58 @@ use strict;
 use warnings;
 
 #use base 'DBIx::Class::Schema';
-use base 'DBI';
+use DBI;
 use Carp;
 
 #use Data::Dumper;
 
 sub _new {
-  my ($class, $dbi_connection_string);
-  my $self = DBI->connect($dbi_connection_string) or croak($!);
-  $self->do("set names 'cp1251'");
+  my ($class, $dbi_connection_string) = @_;
+  $dbi_connection_string ||= 'dbi:SQLite:sape.db';
+  my $dbh = DBI->connect($dbi_connection_string) or croak($!);
+  my $self = {db => $dbh};
   bless $self, $class;
+#  $self->{db}->do("set names 'cp1251'");  
   return $self;
 } # constructor - database connector
 
 
 sub _recreate_links_table {
   my ($self) = @_;
-  my $links_sql = <<'END_OF_LINKS_SQL';
-CREATE TABLE links (
-  link_id INTEGER AUTO_INCREMENT PRIMARY KEY,
+  my $create_link_sql = <<'END_OF_LINKS_SQL';
+CREATE TABLE link (
+  link_id INTEGER PRIMARY KEY,
   project_id INTEGER,
   site_url TEXT NOT NULL,
-  page_uri TEXT NOT NULL,
+  page_uri TEXT NOT NULL
 );
 END_OF_LINKS_SQL
 
-  $self->do("DROP table links");
-  $self->do($links_sql);
-  return;
+  $self->{db}->do("DROP table link") or croak($!);
+  $self->{db}->do($create_link_sql) or croak($!);
+  return 1;
 } # just sql 
 
 
 sub _create_link {
   my ($self, $link) = @_;
   croak "$link is not a Link" if(! $link->isa('Sape::Link'));
-  my $link_exists = $self->selectrow_hashref
+  my $link_exists = $self->{db}->selectrow_hashref
     (
-     "select * from links where site_url like ? and page_uri like ?",
+     "select * from link where site_url like ? and page_uri like ?",
      {},
      $link->site_url,
      $link->page_uri
      );
   return $link_exists->{link_id} if $link_exists;
-  $self->do
+  $self->{db}->do
     (
-     "insert into links (site_url, page_uri) values (?, ?)",
+     "insert into link (site_url, page_uri) values (?, ?)",
      {},
      $link->site_url,
      $link->page_uri
      );
-  return $self->mysql_inserid;
+  return $self->{db}->mysql_inserid;
 } # insert link into db, returns last_insert_id
 
 1;

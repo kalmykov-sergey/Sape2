@@ -1,4 +1,5 @@
 use Test::More 'no_plan';#tests => 11;
+use lib '/home/sergey/projects';
 BEGIN { use_ok('Sape::Index') };
 
 is( qip_check('www.ntatm.ru/clauses/zastolie3.html'), 1, 'www with no http');

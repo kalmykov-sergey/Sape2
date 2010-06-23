@@ -1,6 +1,23 @@
 Sape version 0.01
 =================
 
+How it works:
+   Suppose the user has an account on Sape.ru. Using xml-rpc interface we fetch
+   projects and links of the user.
+   
+   DataBase.
+   All this info must be stored in db. On the testing
+   stage we use sqlite3 database, later it can be moved to mysql.
+   What operations we must do with db?
+      1. Create user, create all his projects and links.
+      2. Read all user info (projects and links) from db.
+      3. Update projects (uncommon operation) and links (most often).
+      4. Delete links. May be projects.
+   What objects so we have?
+      1. User. It can:
+         create(login, password)
+So Sape module contains 3 parts:
+   rpc must 
 The README is used to introduce the module and provide instructions on
 how to install the module, any machine dependencies it may have (for
 example C compilers and installed libraries) and any other information
@@ -38,3 +55,10 @@ it under the same terms as Perl itself, either Perl version 5.10.0 or,
 at your option, any later version of Perl 5 you may have available.
 
 
+ТЗ:
+   Раз в неделю проверяются все имеющиеся ссылки.
+   Раз в час ищется, нет ли новых ссылок. Они тут же проверяются.
+   Ссылки хранятся в базе вечно (ну, пусть, месяц после удаления).
+   При занесении новой ссылки в базу проверяем, нет ли уже такой, если есть, то
+   в поле err заносим, что ссылка участвует в 2+ проектах.
+   

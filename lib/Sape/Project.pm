@@ -16,8 +16,41 @@ or
 or just
     my $pr = Sape::Project->create(links => \@links [, user => 'anonymous']);
 =cut
-sub create {
-    return new()
+sub new {
+    my ($class, $id_or_hash_ref) = @_;
+    my $self = undef;
+    if(ref($id_or_hash_ref) eq 'HASH'){
+        my $hr = $id_or_hash_ref;
+        return $class->new($hr->{'project_id'}) if defined $hr->{'project_id'};
+        croak('bad usage: new({links => [...]})') if
+            (not defined $hr->{links} or ref($hr->{links}) ne 'ARRAY');
+        my $links_arr_ref = [];
+        foreach my $link (@{$hr->{links}}){
+            $link = Sape::Link->new($link) if (! $link->isa('Sape::Link'));
+            push @$links_arr_ref, $link;
+        }
+        my $uri = URI->new($hr->{'site_url'} . $hr->{'page_uri'});
+        $self = $hr;
+        $self->{URI} = $uri;
+        $self->{'project_id'} = 0 if not defined $self->{'project_id'};
+    } else {
+        my $id = $id_or_hashref;
+        $url = 'http://'.$url if($url !~ /^http:/x);
+        my $uri = URI->new($url);
+        my $host = $uri->host();
+        my $page = $uri->path();
+        $page .= $uri->query() if $uri->query();
+        $page .= $uri->fragment() if $uri->fragment();
+        $self = {URI => $uri, 'site_url' => $host, 'page_uri' => $page};
+        $self->{'project_id'} = 0;
+    }
+    bless $self, $class;
+    return $self;
+}
+
+
+sub id {
+    
 }
 
 sub _create_from_file {

@@ -2,11 +2,12 @@ package Sape::DB;
 use strict;
 use warnings;
 
-#use base 'DBIx::Class::Schema';
+#use 'DBIx::Class::Schema';
 use DBI;
 use Carp;
 
 use Sape::Link;
+use Sape::Project;
 
 #use Data::Dumper;
 
@@ -32,13 +33,13 @@ CREATE TABLE link (
 );
 END_OF_LINKS_SQL
 
-  $self->{db}->do("DROP table link") or croak($!);
-  $self->{db}->do($create_link_sql) or croak($!);
+  $self->{db}->do("DROP table link") or croak($self->{db}->errstr);
+  $self->{db}->do($create_link_sql) or croak($self->{db}->errstr);
   return 1;
-} # just sql 
+} # truncate links table (drop if some bad previous creation) 
 
 
-sub _create_link {
+sub _insert_link {
   my ($self, $link) = @_;
   croak "$link is not a Link" if(! $link->isa('Sape::Link'));
   my $link_exists = $self->{db}->selectrow_hashref
@@ -55,9 +56,43 @@ sub _create_link {
      {},
      $link->site_url,
      $link->page_uri
-     );
+     ) or croak($self->{db}->errstr);
   return $self->{db}->last_insert_id('', '', '', '');
 } # insert link into db, returns last_insert_id
+
+
+sub _delete_link {
+  my ($self, $link) = @_;
+  croak "$link is not a Link" if(! $link->isa('Sape::Link'));
+  my $delete_sql = 'delete from link where site_url like ? and page_uri like ?';
+  if($link->{'link_id'}){
+    $delete_sql = 'delete from link where link_id = ' . $link->{'link_id'} .
+      ' and site_url like ? and page_uri like ?';
+  }
+  my $rows = $self->{db}->do
+    (
+     $delete_sql,
+     {},
+     $link->site_url,
+     $link->page_uri
+     );
+  return int($rows);
+} # delete link, using link_id or not, returns number of deleted (1 or 0) links
+
+
+sub _read_link {
+  
+}
+
+
+sub _read_project {
+  my ($self, $project_id_or_name) = @_;
+  my $links_arr_ref = [];
+  return Sape::Project->new({
+                             'project_id' => $project_id,
+                             links => $links_arr_ref,
+                             });
+}
 
 1;
 __END__
